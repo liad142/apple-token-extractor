@@ -1,0 +1,28 @@
+name: Keepalive
+
+# Prevents GitHub from auto-disabling the scheduled "Apple Token Auto-Refresh"
+# workflow after 60 days of repo inactivity. Scheduled-workflow RUNS do not count
+# as activity — only commits do. This makes a tiny heartbeat commit weekly, so the
+# repo is never idle for 60 days and no scheduled workflow ever gets disabled.
+
+on:
+  schedule:
+    - cron: '17 6 * * 1'   # Mondays 06:17 UTC (well within the 60-day window)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  heartbeat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Commit heartbeat
+        run: |
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .keepalive
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .keepalive
+          git commit -m "chore: keepalive heartbeat [skip ci]" || { echo "no change"; exit 0; }
+          git push
